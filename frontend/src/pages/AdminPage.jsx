@@ -6,17 +6,79 @@ import { Navbar, Nav, Button, Table, Modal, Form, Tab, Tabs, Row, Container, Col
 import { productSchema } from '../validations/userController';
 
 function AdminPage() {
+  const [selectedProductId, setSelectedProductId] = useState(null);
   const [userData, setUserData] = useState([]);
   const [productData, setProductData] = useState([]);
-  const [selectedItemData, setSelectedItemData] = useState(null);
-  const [selectedItemId, setSelectedItemId] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [show, setShow] = useState(false);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
   const [values, setValues] = useState({
     product_name: '',
     product_description: '',
     product_photo: '',
     product_qty: 0,
   });
+
+  const [updateProductData, setUpdateProductData] = useState({
+    product_name: '',
+    product_description: '',
+    product_photo: '',
+    product_price: 0,
+    product_qty: 0,
+  });
+
+  // Function to handle the "Update" button click
+  const handleUpdateClick = (product) => {
+    // Set the selected product ID
+    setSelectedProductId(product.product_id);
+  
+    // Populate the update form with the selected product data
+    setUpdateProductData({
+      product_name: product.product_name,
+      product_description: product.product_description,
+      product_photo: product.product_photo,
+      product_price: product.product_price,
+      product_qty: product.product_qty,
+    });
+  
+    handleShow(); // Show the modal
+  };
+
+  // Create a new function to handle the update operation
+  const handleUpdate = async () => {
+    try {
+      const tableName = 'product'; // Specify the table name
+      const primaryKey = selectedProductId; // Specify the primary key (product_id in this case)
+  
+      // Your update data (updateProductData)
+      const updateData = {
+        product_name: updateProductData.product_name,
+        product_description: updateProductData.product_description,
+        product_price: updateProductData.product_price,
+        product_qty: updateProductData.product_qty,
+      };
+  
+      // Your update API endpoint
+      const response = await axios.put(`http://localhost:3000/update/${tableName}/${primaryKey}`, updateData);
+  
+      if (response && response.data && response.data.Status === `${tableName} record updated successfully`) {
+        alert(response.data.Status);
+  
+        // Close the modal
+        handleClose();
+  
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+  
+      } else {
+        console.error('Unexpected response structure:', response);
+      }
+    } catch (error) {
+      console.error('Error updating product:', error);
+    }
+  };
+  
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -32,13 +94,14 @@ function AdminPage() {
           product_name: '',
           product_description: '',
           product_photo: '',
+          product_price: 0,
           product_qty: 0,
         });
   
 
         setTimeout(() => {
           window.location.reload();
-        }, 1000);
+        }, 500);
       } else if (response && response.data && response.data.Status === 'Product name already exists') {
         alert(response.data.Status);
       } else {
@@ -58,7 +121,6 @@ function AdminPage() {
   };
   
   const navigate = useNavigate();
-  const [data, setData] = useState([]);
 
   const handleLogout = () => {
     fetch('http://localhost:3000/logout', {
@@ -80,10 +142,6 @@ function AdminPage() {
       .catch((error) => {
         console.error('Error during logout:', error);
       });
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
   };
 
   const handleDelete = async (itemId, itemType) => {
@@ -142,7 +200,7 @@ function AdminPage() {
         </Navbar.Collapse>
       </Navbar>
 
-      <Tabs defaultActiveKey="user" id="uncontrolled-tab-example" className="mt-5 pl-5 pt-5" fill>
+      <Tabs defaultActiveKey="user" id="uncontrolled-tab-example" className="mt-5 pl-5 pt-5">
         <Tab eventKey="user" title="Manage User"  className='pt-1'>
           <div className="container-fluid p-4 pt-0"><br /><br />
               <h2>Registered User</h2>
@@ -185,6 +243,7 @@ function AdminPage() {
                 <th>ID</th>
                 <th>Product Name</th>
                 <th>Product Description</th>
+                <th>Price</th>
                 <th>Product QTY</th>
                 <th>Action</th>
               </tr>
@@ -195,8 +254,10 @@ function AdminPage() {
                   <td>{product.product_id}</td>
                   <td>{product.product_name}</td>
                   <td>{product.product_description}</td>
+                  <td>{product.product_price}</td>
                   <td>{product.product_qty}</td>
                   <td>
+                    <Button variant="success" onClick={() => handleUpdateClick(product)}>Update</Button>
                     <Button variant="danger" onClick={() => handleDelete(product.product_id, 'product')}>Delete</Button>
                   </td>
                 </tr>
@@ -244,6 +305,16 @@ function AdminPage() {
                   </Form.Group>
 
                   <Form.Group className='mt-2'>
+                    <Form.Label>Price</Form.Label>
+                    <Form.Control
+                      type="number"
+                      name="price"
+                      placeholder="Enter price"
+                      onChange={(e) => setValues({ ...values, product_price: e.target.value })}
+                    />
+                  </Form.Group>
+
+                  <Form.Group className='mt-2'>
                     <Form.Label>Quantity</Form.Label>
                     <Form.Control
                       type="number"
@@ -264,10 +335,75 @@ function AdminPage() {
         </Container>
         </Tab>
       </Tabs>
+
+{/* Update Product Modal */}
+      <Modal show={show} onHide={handleClose} backdrop="static" keyboard={false}>
+        <Modal.Header closeButton>
+          <Modal.Title>Update Product</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form >
+            <Form.Group className='mt-0'>
+              <Form.Label>Product Name</Form.Label>
+              <Form.Control
+                type="text"
+                name="name"
+                value={updateProductData.product_name}
+                onChange={(e) => setUpdateProductData({ ...updateProductData, product_name: e.target.value })}
+              />
+            </Form.Group>
+
+            <Form.Group className='mt-2'>
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                type="text"
+                name="description"
+                value={updateProductData.product_description}
+                onChange={(e) => setUpdateProductData({ ...updateProductData, product_description: e.target.value })}
+              />
+            </Form.Group>
+
+            <Form.Group className='mt-2'>
+              <Form.Label>Product Image</Form.Label>
+              <Form.Control
+                type="text"
+                name="image"
+                value={updateProductData.product_photo}
+                onChange={(e) => setUpdateProductData({ ...updateProductData, product_photo: e.target.value })}
+              />
+            </Form.Group>
+
+            <Form.Group className='mt-2'>
+              <Form.Label>Price</Form.Label>
+              <Form.Control
+                type="number"
+                name="price"
+                value={updateProductData.product_price}
+                placeholder="Enter price"
+                onChange={(e) => setUpdateProductData({ ...updateProductData, product_price: e.target.value })}
+              />
+            </Form.Group>
+
+            <Form.Group className='mt-2'>
+              <Form.Label>Quantity</Form.Label>
+              <Form.Control
+                type="number"
+                name="quantity"
+                value={updateProductData.product_qty}
+                onChange={(e) => setUpdateProductData({ ...updateProductData, product_qty: e.target.value })}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={handleUpdate}>Update</Button>
+        </Modal.Footer>
+      </Modal>
     </>
   );
 }
 
 export default AdminPage;
-
-

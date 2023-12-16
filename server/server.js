@@ -10,7 +10,7 @@ const salt = 10;
 dotenv.config();
 
 const app = express();
-// Updated CORS middleware
+const port = 3000;
 const corsOptions = {
     origin: 'http://localhost:5173',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -25,8 +25,6 @@ app.use(cors({
     methods: ["POST", "GET"],
     credentials: true
 }));
-app.use(express.json());
-app.use(cookieParser());
 
 const db = mysql.createConnection({
     host: process.env.DB_HOST,
@@ -174,7 +172,7 @@ db.query(query, (err, result) => {
 //add Product
 app.post('/add_product', async (req, res) => {
     const checkProductNameQuery = "SELECT * FROM product WHERE product_name = ?";
-    const insertProductQuery = "INSERT INTO product (`product_name`, `product_description`, `product_photo`, `product_qty`) VALUES (?)";
+    const insertProductQuery = "INSERT INTO product (`product_name`, `product_description`, `product_photo`, `product_price`, `product_qty`) VALUES (?)";
   
     try {
       // Check if the product name already exists
@@ -193,6 +191,7 @@ app.post('/add_product', async (req, res) => {
           req.body.product_name,
           req.body.product_description,
           req.body.product_photo,
+          req.body.product_price,
           req.body.product_qty,
         ];
   
@@ -234,7 +233,41 @@ app.delete('/delete/:itemType/:itemId', (req, res) => {
         return res.json({ Status: 'Item deleted successfully' });
     });
 });
+
+app.put('/update/:tableName/:id', async (req, res) => {
+    const tableName = req.params.tableName;
+    const id = req.params.id;
   
-app.listen(3000, () => {
+    // Determine the update query and corresponding values based on the table name
+    let updateQuery, values;
+  
+    if (tableName === 'product') {
+      updateQuery = "UPDATE product SET product_name=?, product_description=?, product_price=?, product_qty=? WHERE product_id=?";
+      values = [req.body.product_name, req.body.product_description, req.body.product_price, req.body.product_qty, id];
+    } else if (tableName === 'users') {
+      updateQuery = "UPDATE users SET name=?, username=?, birthdate=?, role=?, email=? WHERE id=?";
+      values = [req.body.name, req.body.username, req.body.birthdate, req.body.role, req.body.email, id];
+    } else {
+      return res.status(400).json({ Error: "Invalid table name" });
+    }
+  
+    try {
+      // Update the record in the database
+      db.query(updateQuery, values, (updateErr, updateResult) => {
+        if (updateErr) {
+          console.error(`Error updating record in ${tableName} table:`, updateErr);
+          return res.status(500).json({ Error: "Internal Server Error" });
+        }
+  
+        return res.status(200).json({ Status: `${tableName} record updated successfully` });
+      });
+    } catch (error) {
+      console.error(`Error updating record in ${tableName} table:`, error.message);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  
+app.listen(port, () => {
     console.log("Server is running...");
 })

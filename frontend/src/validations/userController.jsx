@@ -19,5 +19,6 @@ export const productSchema = yup.object().shape({
   product_name: yup.string().required('Product name is required'),
   product_description: yup.string().required('Product description is required'),
   product_photo: yup.string().url('Invalid URL format').required('Product photo URL is required'),
+  product_price: yup.number().integer('Price must be an integer').positive('Price must be positive').required('Price is required'),
   product_qty: yup.number().integer('Quantity must be an integer').positive('Quantity must be positive').required('Quantity is required'),
 });

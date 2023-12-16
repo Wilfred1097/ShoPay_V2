@@ -35,7 +35,6 @@ function Register() {
       }
     } catch (error) {
       if (error.name === 'ValidationError') {
-        // Handle validation errors
         const validationErrors = {};
         error.inner.forEach(err => {
           validationErrors[err.path] = err.message;
