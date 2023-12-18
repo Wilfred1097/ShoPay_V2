@@ -170,30 +170,53 @@ app.post('/login', (req, res) => {
       }
   });
 });
-//Profile
+//Profile and Purchase History
 app.get('/profile', authenticateToken, (req, res) => {
   const userId = req.userId;
 
+  // Query to fetch user information
   const getUserQuery = 'SELECT * FROM users WHERE user_id = ?';
-  db.query(getUserQuery, [userId], (err, result) => {
-    if (err) {
-      console.error('Error executing MySQL query:', err);
+  // Query to fetch purchased items
+  const getPurchaseQuery = 'SELECT product_name, quantity, purchased_date FROM purchase WHERE user_id = ?';
+
+  // Execute both queries
+  db.query(getUserQuery, [userId], (userErr, userResult) => {
+    if (userErr) {
+      console.error('Error executing MySQL query for user information:', userErr);
       res.status(500).json({ error: 'Internal Server Error' });
       return;
     }
 
-    const user = result[0];
+    const user = userResult[0];
 
-    res.json({
-      userId: user.user_id,
-      name: user.name,
-      username: user.username,
-      address: user.address,
-      email: user.email,
+    // Execute the query for purchased items
+    db.query(getPurchaseQuery, [userId], (purchaseErr, purchaseResult) => {
+      if (purchaseErr) {
+        console.error('Error executing MySQL query for purchased items:', purchaseErr);
+        res.status(500).json({ error: 'Internal Server Error' });
+        return;
+      }
+
+      const purchasedItems = purchaseResult.map((item) => ({
+        product_name: item.product_name,
+        quantity: item.quantity,
+        purchased_date: item.purchased_date,
+      }));
+
+      // Combine user information and purchased items in the response
+      res.json({
+        userId: user.user_id,
+        name: user.name,
+        username: user.username,
+        address: user.address,
+        email: user.email,
+        purchasedItems: purchasedItems,
+      });
     });
-
   });
 });
+
+
  
 //Logout
 app.post('/logout', (req, res) => {
