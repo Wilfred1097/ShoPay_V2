@@ -14,12 +14,16 @@ const authenticateToken = (req, res, next) => {
   const token = req.cookies.token;
 
   if (!token) {
-    return res.status(401).json({ Error: "Unauthorized" });
+    return res.status(401).json({ error: "Unauthorized", message: "Authentication token is missing." });
   }
 
   jwt.verify(token, process.env.USER_TOKEN, (err, user) => {
     if (err) {
-      return res.status(403).json({ Error: "Forbidden" });
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({ error: "Unauthorized", message: "Authentication token has expired." });
+      } else {
+        return res.status(403).json({ error: "Forbidden", message: "Invalid authentication token." });
+      }
     }
 
     // Add the user ID to the request object
@@ -27,6 +31,7 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+
 
 const app = express();
 const port = 3000;
@@ -398,9 +403,7 @@ app.get('/cart', authenticateToken, (req, res) => {
   const userId = req.userId;
 
   const getCartProductsQuery = `
-    SELECT product_name, product_description, product_price, quantity
-    FROM CartProductView
-    WHERE user_id = ?;
+    SELECT * FROM CartProductView WHERE user_id = ?;
   `;
 
   db.query(getCartProductsQuery, [userId], (err, result) => {
@@ -414,6 +417,8 @@ app.get('/cart', authenticateToken, (req, res) => {
 
     // Assuming result is an array of rows from the query
     const cartProducts = result.map((row) => ({
+      cart_id: row.cart_id,
+      product_id: row.product_id,
       product_name: row.product_name,
       product_description: row.product_description,
       product_price: row.product_price,
@@ -427,6 +432,32 @@ app.get('/cart', authenticateToken, (req, res) => {
     // console.log('Cart products fetched successfully:', cartProducts);
   });
 });
+
+//Chekout
+app.post('/checkout', authenticateToken, async (req, res) => {
+  const { productName, cartId } = req.body;
+  const userId = req.userId;
+
+  try {
+    // Perform the checkout process, update checkout table, and product table
+    // Example SQL queries:
+    
+    // Insert into Purchase table (assuming Purchase is your checkout table)
+    await db.query('INSERT INTO purchase (user_id, product_name, quantity) VALUES (?, ?, ?)', [userId, productName, 1]);
+
+    // Update Product table to reduce quantity
+    await db.query('UPDATE product SET product_qty = product_qty - 1 WHERE product_name = ?', [productName]);
+
+    // Delete the record from CartProductView using cartId
+    await db.query('DELETE FROM cart WHERE cart_id = ?', [cartId]);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error during checkout:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
   
 app.listen(port, () => {
     console.log("Server is running...");
