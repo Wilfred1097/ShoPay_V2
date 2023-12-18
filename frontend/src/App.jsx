@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import AdminPage from './pages/AdminPage';
 import Profile from './pages/Profile';
 import ProductDetails from './pages/ProductDetails';
+import Cart from './pages/Cart';
 
 const ProtectedRoute = ({ element, allowedRoles, ...props }) => {
   // Replace the following line with your actual authentication and role-checking logic
@@ -33,6 +34,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/product/:id" element={<ProductDetails />} />
+        <Route path="/cart" element={<Cart />} />
         <Route
           path="/admin"
           element={<ProtectedRoute element={<AdminPage />} allowedRoles={['admin']} />}

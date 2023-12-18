@@ -4,6 +4,7 @@ import { useCookies } from 'react-cookie';
 import { useNavigate } from 'react-router-dom';
 import Profile from './Profile';
 
+
 const CustomNavbar = () => {
   const navigate = useNavigate();
   const [cookies, , removeCookie] = useCookies(['token']);
@@ -11,7 +12,7 @@ const CustomNavbar = () => {
 
   const handleLogout = () => {
     removeCookie('token');
-    navigate('/dashboard');
+    navigate('/');
   };
 
   return (
@@ -24,6 +25,7 @@ const CustomNavbar = () => {
           {isTokenPresent ? (
             <>
               <Nav.Link href="/profile" className="mr-3">Profile</Nav.Link>
+              <Nav.Link href="/cart" className="mr-3">Cart</Nav.Link>
               <Button variant="light" onClick={handleLogout}>Logout</Button>
             </>
           ) : (

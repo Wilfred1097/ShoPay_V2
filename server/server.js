@@ -66,7 +66,7 @@ db.connect((err) => {
 app.post('/register', (req, res) => {
     const checkEmailQuery = "SELECT * FROM users WHERE email = ?";
     const checkUsernameQuery = "SELECT * FROM users WHERE username = ?";
-    const insertUserQuery = "INSERT INTO users (`name`, `username`, `birthdate`, `role`, `email`, `password`) VALUES (?)";
+    const insertUserQuery = "INSERT INTO users (`name`, `username`, `birthdate`, `address`, `role`, `email`, `password`) VALUES (?)";
 
     // Check if the email already exists
     db.query(checkEmailQuery, [req.body.email], (errEmail, resultEmail) => {
@@ -101,6 +101,7 @@ app.post('/register', (req, res) => {
                     req.body.name,
                     req.body.username,
                     req.body.birthdate,
+                    req.body.address,
                     req.body.role,
                     req.body.email,
                     hash
@@ -164,11 +165,10 @@ app.post('/login', (req, res) => {
       }
   });
 });
-// Example of using the middleware in a route
+//Profile
 app.get('/profile', authenticateToken, (req, res) => {
   const userId = req.userId;
 
-  // Use the user ID to fetch information from the server
   const getUserQuery = 'SELECT * FROM users WHERE user_id = ?';
   db.query(getUserQuery, [userId], (err, result) => {
     if (err) {
@@ -177,22 +177,19 @@ app.get('/profile', authenticateToken, (req, res) => {
       return;
     }
 
-    // Assuming there is only one user with the given ID
     const user = result[0];
 
-    // Display user information in the profile page
     res.json({
       userId: user.user_id,
       name: user.name,
       username: user.username,
       address: user.address,
       email: user.email,
-      // Add other user information as needed
     });
 
   });
 });
-
+ 
 //Logout
 app.post('/logout', (req, res) => {
     res.cookie('token', '', { expires: new Date(0) });
@@ -324,7 +321,7 @@ app.put('/update/:tableName/:id', async (req, res) => {
     }
   });
 
-  // Endpoint to fetch product details based on product ID
+// Endpoint to fetch product details based on product ID
 app.get('/product/:id', (req, res) => {
   const productId = parseInt(req.params.id, 10);
 
@@ -365,8 +362,71 @@ app.get('/product/:id', (req, res) => {
     });
   });
 });
+// Add to Cart
+app.post('/add-to-cart', authenticateToken, (req, res) => {
+  const userId = req.userId;
+  const productId = req.body.productId; // Assuming the product ID is sent in the request body
 
-  
+  // Check if the product is already in the user's cart
+  const checkCartQuery = 'SELECT * FROM cart WHERE user_id = ? AND product_ids = ?';
+  db.query(checkCartQuery, [userId, productId], (checkErr, checkResult) => {
+    if (checkErr) {
+      console.error('Error checking cart:', checkErr);
+      return res.status(500).json({ error: 'Internal Server Error - Check Cart' });
+    }
+
+    if (checkResult.length > 0) {
+      // If the product is already in the cart, you might want to handle this case
+      return res.json({ status: 'Product already in the cart' });
+    }
+
+    // If the product is not in the cart, add it
+    const addToCartQuery = 'INSERT INTO cart (user_id, product_ids, quantity) VALUES (?, ?, 1)';
+    db.query(addToCartQuery, [userId, productId], (addErr, addResult) => {
+      if (addErr) {
+        console.error('Error adding to cart:', addErr);
+        return res.status(500).json({ error: 'Internal Server Error - Add to Cart' });
+      }
+
+      return res.json({ status: 'Product added to cart successfully' });
+    });
+  });
+});
+
+// Endpoint to fetch cart products based on user ID
+app.get('/cart', authenticateToken, (req, res) => {
+  const userId = req.userId;
+
+  const getCartProductsQuery = `
+    SELECT product_name, product_description, product_price, quantity
+    FROM CartProductView
+    WHERE user_id = ?;
+  `;
+
+  db.query(getCartProductsQuery, [userId], (err, result) => {
+    if (err) {
+      console.error('Error executing MySQL query:', err);
+      return res.status(500).json({
+        error: 'Internal Server Error',
+        details: 'An error occurred while fetching cart products.',
+      });
+    }
+
+    // Assuming result is an array of rows from the query
+    const cartProducts = result.map((row) => ({
+      product_name: row.product_name,
+      product_description: row.product_description,
+      product_price: row.product_price,
+      quantity: row.quantity,
+    }));
+
+    // Send the JSON-formatted result in the response
+    res.json({ data: cartProducts });
+
+    // Avoid logging sensitive information in a production environment
+    // console.log('Cart products fetched successfully:', cartProducts);
+  });
+});
   
 app.listen(port, () => {
     console.log("Server is running...");
