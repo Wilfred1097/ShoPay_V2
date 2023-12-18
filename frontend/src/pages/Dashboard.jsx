@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Navbar, Nav, Card, Button, Container, Row, Col } from 'react-bootstrap';
+import CustomNavbar from './NavigationBar';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -42,16 +43,10 @@ function Dashboard() {
 
   return (
     <>
-    <Navbar bg="success" variant="dark" expand="lg" fixed="top" className="p-2">
-        <Navbar.Brand href="/"><strong>ShoPay</strong></Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="ml-auto">
-            <Button variant="light" onClick={handleLogout}>Logout</Button>
-          </Nav>
-        </Navbar.Collapse>
-      </Navbar>
-      
+    <div>
+      <CustomNavbar />
+    </div>
+    
       <Container fluid className="mt-5 pt-5">
       <Row xs={2} md={3} lg={4} xl={5} xxl={6} className="g-4">
           {productData.map((product, index) => (

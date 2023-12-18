@@ -28,7 +28,7 @@ function Login() {
         if (userRole === 'admin') {
           navigate('/admin');
         } else if (userRole === 'user') {
-          navigate('/dashboard');
+          navigate('/');
         } else {
           alert("Invalid user role");
         }

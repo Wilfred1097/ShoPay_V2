@@ -9,6 +9,25 @@ import cookieParser from 'cookie-parser';
 const salt = 10;
 dotenv.config();
 
+// Middleware function to extract user ID from the token
+const authenticateToken = (req, res, next) => {
+  const token = req.cookies.token;
+
+  if (!token) {
+    return res.status(401).json({ Error: "Unauthorized" });
+  }
+
+  jwt.verify(token, process.env.USER_TOKEN, (err, user) => {
+    if (err) {
+      return res.status(403).json({ Error: "Forbidden" });
+    }
+
+    // Add the user ID to the request object
+    req.userId = user.userId;
+    next();
+  });
+};
+
 const app = express();
 const port = 3000;
 const corsOptions = {
@@ -41,6 +60,8 @@ db.connect((err) => {
         console.log('Connected to the database');
     }
 });
+
+
 // Registration
 app.post('/register', (req, res) => {
     const checkEmailQuery = "SELECT * FROM users WHERE email = ?";
@@ -100,42 +121,78 @@ app.post('/register', (req, res) => {
 });
 //Login
 app.post('/login', (req, res) => {
-    const sql = 'SELECT * FROM users WHERE email = ?';
-    db.query(sql, [req.body.email], (err, data) => {
-        if (err) return res.json({ Error: "Login error in server" });
+  const sql = 'SELECT * FROM users WHERE email = ?';
+  db.query(sql, [req.body.email], (err, data) => {
+      if (err) return res.json({ Error: "Login error in server" });
 
-        if (data.length > 0) {
-            bcrypt.compare(req.body.password.toString(), data[0].password, (err, response) => {
-                if (err) return res.json({ Error: "Password compare error" });
+      if (data.length > 0) {
+          bcrypt.compare(req.body.password.toString(), data[0].password, (err, response) => {
+              if (err) return res.json({ Error: "Password compare error" });
 
-                if (response) {
-                    const name = data[0].name;
-                    const userRole = data[0].role;
+              if (response) {
+                  const name = data[0].name;
+                  const userId = data[0].user_id; // Retrieve the user ID
+                  const userRole = data[0].role;
 
-                    // Set the appropriate secret key based on the user role
-                    let secretKey;
-                    if (userRole === 'admin') {
-                        secretKey = process.env.ADMIN_TOKEN;
-                    } else if (userRole === 'user') {
-                        secretKey = process.env.USER_TOKEN;
-                    } else {
-                        return res.json({ Error: "Invalid user role" });
+                  // Set the appropriate secret key based on the user role
+                  let secretKey;
+                  if (userRole === 'admin') {
+                    if (!process.env.ADMIN_TOKEN) {
+                        return res.json({ Error: "Admin token not configured" });
                     }
-                    
-                    // Sign the token using the selected secret key
-                    const token = jwt.sign({ name }, secretKey, { expiresIn: '1d' });
-                    res.cookie('token', token);
+                    secretKey = process.env.ADMIN_TOKEN;
+                  } else if (userRole === 'user') {
+                      if (!process.env.USER_TOKEN) {
+                          return res.json({ Error: "User token not configured" });
+                      }
+                      secretKey = process.env.USER_TOKEN;
+                  } else {
+                      return res.json({ Error: "Invalid user role" });
+                  }
+                  
+                  // Sign the token using the selected secret key
+                  const token = jwt.sign({ userId, name }, secretKey, { expiresIn: '1d' });
+                  res.cookie('token', token);
 
-                    return res.json({ Status: "Success", Role: userRole });
-                } else {
-                    return res.json({ Error: "Password not matched" });
-                }
-            });
-        } else {
-            return res.json({ Error: "No email existed" });
-        }
-    });
+                  return res.json({ Status: "Success", Role: userRole, UserId: userId });
+              } else {
+                  return res.json({ Error: "Password not matched" });
+              }
+          });
+      } else {
+          return res.json({ Error: "No email existed" });
+      }
+  });
 });
+// Example of using the middleware in a route
+app.get('/profile', authenticateToken, (req, res) => {
+  const userId = req.userId;
+
+  // Use the user ID to fetch information from the server
+  const getUserQuery = 'SELECT * FROM users WHERE user_id = ?';
+  db.query(getUserQuery, [userId], (err, result) => {
+    if (err) {
+      console.error('Error executing MySQL query:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    // Assuming there is only one user with the given ID
+    const user = result[0];
+
+    // Display user information in the profile page
+    res.json({
+      userId: user.user_id,
+      name: user.name,
+      username: user.username,
+      address: user.address,
+      email: user.email,
+      // Add other user information as needed
+    });
+
+  });
+});
+
 //Logout
 app.post('/logout', (req, res) => {
     res.cookie('token', '', { expires: new Date(0) });
@@ -201,7 +258,7 @@ app.post('/add_product', async (req, res) => {
             console.error("Error inserting product:", insertErr);
             return res.status(500).json({ Error: "Internal Server Error" });
           }
-  
+          db.end();
           return res.status(201).json({ Status: "Product added successfully" });
         });
       });
@@ -245,8 +302,8 @@ app.put('/update/:tableName/:id', async (req, res) => {
       updateQuery = "UPDATE product SET product_name=?, product_description=?, product_price=?, product_qty=? WHERE product_id=?";
       values = [req.body.product_name, req.body.product_description, req.body.product_price, req.body.product_qty, id];
     } else if (tableName === 'users') {
-      updateQuery = "UPDATE users SET name=?, username=?, birthdate=?, role=?, email=? WHERE id=?";
-      values = [req.body.name, req.body.username, req.body.birthdate, req.body.role, req.body.email, id];
+      updateQuery = "UPDATE users SET name=?, username=?, birthdate=?, address=?, role=?, email=? WHERE user_id=?";
+      values = [req.body.name, req.body.username, req.body.birthdate, req.body.address, req.body.role, req.body.email, id];
     } else {
       return res.status(400).json({ Error: "Invalid table name" });
     }
@@ -266,6 +323,49 @@ app.put('/update/:tableName/:id', async (req, res) => {
       res.status(500).json({ message: 'Internal server error' });
     }
   });
+
+  // Endpoint to fetch product details based on product ID
+app.get('/product/:id', (req, res) => {
+  const productId = parseInt(req.params.id, 10);
+
+  // Check if productId is a valid integer
+  if (isNaN(productId)) {
+    res.status(400).json({ error: 'Invalid product ID' });
+    return;
+  }
+
+  // Modify the SQL query to select the specific product based on the product ID
+  const getProductQuery = 'SELECT * FROM product WHERE product_id = ?';
+
+  db.query(getProductQuery, [productId], (err, result) => {
+    if (err) {
+      console.error('Error executing MySQL query:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+
+    if (result.length === 0) {
+      // If no product is found with the given ID, return a 404 status
+      res.status(404).json({ error: 'Product not found' });
+      return;
+    }
+
+    // Assuming there is only one product with the given ID
+    const product = result[0];
+
+    // Display product information
+    res.json({
+      product_id: product.product_id,
+      product_name: product.product_name,
+      product_description: product.product_description,
+      product_photo: product.product_photo,
+      product_price: product.product_price,
+      product_qty: product.product_qty,
+      // Add other product information as needed
+    });
+  });
+});
+
   
   
 app.listen(port, () => {

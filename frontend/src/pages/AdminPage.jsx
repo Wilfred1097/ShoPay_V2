@@ -6,18 +6,80 @@ import { Navbar, Nav, Button, Table, Modal, Form, Tab, Tabs, Row, Container, Col
 import { productSchema } from '../validations/userController';
 
 function AdminPage() {
+  // State for "Update User" modal
+  const [showUpdateUserModal, setShowUpdateUserModal] = useState(false);
+  // State for "Update Product" modal
+  const [showUpdateProductModal, setShowUpdateProductModal] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [userData, setUserData] = useState([]);
   const [productData, setProductData] = useState([]);
   const [show, setShow] = useState(false);
   const handleClose = () => setShow(false);
-  const handleShow = () => setShow(true);
   const [values, setValues] = useState({
     product_name: '',
     product_description: '',
     product_photo: '',
     product_qty: 0,
   });
+
+  const [updateUserData, setUpdateUserData] = useState({
+    user_id: null,
+    name: '',
+    username: '',
+    birthdate: '',
+    address: '',
+    role: '',
+    email: '',
+  });
+
+  const handleUpdateUserClick = (user) => {
+    setSelectedProductId(user.id);
+
+    setUpdateUserData({
+      id: user.user_id,
+      name: user.name,
+      username: user.username,
+      birthdate: user.birthdate,
+      address: user.address,
+      role: user.role,
+      email: user.email,
+    });
+
+    setShowUpdateUserModal(true); // Show the "Update User" modal
+  };
+
+  const handleUpdateUser = async () => {
+    try {
+      const tableName = 'users';
+      const primaryKey = selectedProductId;
+  
+      const updateData = {
+        name: updateUserData.name,
+        username: updateUserData.username,
+        birthdate: updateUserData.birthdate,
+        address: updateUserData.address,
+        role: updateUserData.role,
+        email: updateUserData.email,
+      };
+  
+      const response = await axios.put(`http://localhost:3000/update/${tableName}/${primaryKey}`, updateData);
+  
+      if (response && response.data && response.data.Status === `${tableName} record updated successfully`) {
+        alert(response.data.Status);
+  
+        setShowUpdateUserModal(false);
+  
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        console.error('Unexpected response structure:', response);
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
+  };
+  
 
   const [updateProductData, setUpdateProductData] = useState({
     product_name: '',
@@ -27,12 +89,9 @@ function AdminPage() {
     product_qty: 0,
   });
 
-  // Function to handle the "Update" button click
   const handleUpdateClick = (product) => {
-    // Set the selected product ID
     setSelectedProductId(product.product_id);
-  
-    // Populate the update form with the selected product data
+
     setUpdateProductData({
       product_name: product.product_name,
       product_description: product.product_description,
@@ -40,17 +99,15 @@ function AdminPage() {
       product_price: product.product_price,
       product_qty: product.product_qty,
     });
-  
-    handleShow(); // Show the modal
+
+    setShowUpdateProductModal(true); // Show the "Update Product" modal
   };
 
-  // Create a new function to handle the update operation
   const handleUpdate = async () => {
     try {
-      const tableName = 'product'; // Specify the table name
-      const primaryKey = selectedProductId; // Specify the primary key (product_id in this case)
+      const tableName = 'product';
+      const primaryKey = selectedProductId;
   
-      // Your update data (updateProductData)
       const updateData = {
         product_name: updateProductData.product_name,
         product_description: updateProductData.product_description,
@@ -58,14 +115,12 @@ function AdminPage() {
         product_qty: updateProductData.product_qty,
       };
   
-      // Your update API endpoint
       const response = await axios.put(`http://localhost:3000/update/${tableName}/${primaryKey}`, updateData);
   
       if (response && response.data && response.data.Status === `${tableName} record updated successfully`) {
         alert(response.data.Status);
   
-        // Close the modal
-        handleClose();
+        setShowUpdateProductModal(false);
   
         setTimeout(() => {
           window.location.reload();
@@ -211,6 +266,7 @@ function AdminPage() {
                     <th>Name</th>
                     <th>Username</th>
                     <th>Birthdate</th>
+                    <th>Address</th>
                     <th>Role</th>
                     <th>Email</th>
                     <th>Action</th>
@@ -219,13 +275,15 @@ function AdminPage() {
                 <tbody>
                   {userData.map((user, index) => (
                     <tr key={index}>
-                      <td>{user.id}</td>
+                      <td>{user.user_id}</td>
                       <td>{user.name}</td>
                       <td>{user.username}</td>
                       <td>{user.birthdate}</td>
+                      <td>{user.address}</td>
                       <td>{user.role}</td>
                       <td>{user.email}</td>
                       <td>
+                        <Button variant="success" onClick={() => handleUpdateUserClick(user)}>Update</Button>
                         <Button variant="danger"  onClick={() => handleDelete(user.id, 'user')}>Delete</Button>
                       </td>
                     </tr>
@@ -335,9 +393,86 @@ function AdminPage() {
         </Container>
         </Tab>
       </Tabs>
+{/* Update User Modal */}
+      <Modal show={showUpdateUserModal} onHide={() => setShowUpdateUserModal(false)} backdrop="static" keyboard={false}>
+        <Modal.Header closeButton>
+          <Modal.Title>Update User</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className='mt-3'>
+              <Form.Label>Complete Name</Form.Label>
+              <Form.Control
+                type="text"
+                name="name"
+                value={updateUserData.name}
+                onChange={(e) => setUpdateUserData({ ...updateUserData, name: e.target.value })}
+              />
+            </Form.Group>
+
+            <Form.Group className='mt-2'>
+              <Form.Label>Username</Form.Label>
+              <Form.Control
+                type="text"
+                name="username"
+                value={updateUserData.username}
+                onChange={(e) => setUpdateUserData({ ...updateUserData, username: e.target.value })}
+              />
+            </Form.Group>
+
+            <Form.Group className='mt-2'>
+              <Form.Label>Birthdate</Form.Label>
+              <Form.Control
+                type="date"
+                name="birthdate"
+                value={updateUserData.birthdate}
+                onChange={(e) => setUpdateUserData({ ...updateUserData, birthdate: e.target.value })}
+              />
+            </Form.Group>
+
+            <Form.Group className='mt-2'>
+              <Form.Label>Address</Form.Label>
+              <Form.Control
+                type="text"
+                name="address"
+                value={updateUserData.address}
+                onChange={(e) => setUpdateUserData({ ...updateUserData, address: e.target.value })}
+              />
+            </Form.Group>
+
+            <Form.Group className='mt-2'>
+              <Form.Label>Role</Form.Label>
+              <Form.Control
+                type="text"
+                name="role"
+                value={updateUserData.role}
+                onChange={(e) => setUpdateUserData({ ...updateUserData, role: e.target.value })}
+              />
+            </Form.Group>
+
+            <Form.Group className='mt-2'>
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                name="email"
+                value={updateUserData.email}
+                onChange={(e) => setUpdateUserData({ ...updateUserData, email: e.target.value })}
+              />
+            </Form.Group>
+
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowUpdateUserModal(false)}>Close</Button>
+          <Button variant="primary" onClick={handleUpdateUser}>
+            Update
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
 
 {/* Update Product Modal */}
-      <Modal show={show} onHide={handleClose} backdrop="static" keyboard={false}>
+      <Modal show={showUpdateProductModal} onHide={() => setShowUpdateProductModal(false)} backdrop="static" keyboard={false}>
         <Modal.Header closeButton>
           <Modal.Title>Update Product</Modal.Title>
         </Modal.Header>
@@ -396,9 +531,7 @@ function AdminPage() {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Close
-          </Button>
+        <Button variant="secondary" onClick={() => setShowUpdateProductModal(false)}>Close</Button>
           <Button variant="primary" onClick={handleUpdate}>Update</Button>
         </Modal.Footer>
       </Modal>

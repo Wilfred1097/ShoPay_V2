@@ -10,6 +10,7 @@ function Register() {
     username: '',
     email: '',
     birthdate: '',
+    address: '',
     role: 'user',
     password: '',
     confirmPassword: '',
@@ -96,6 +97,16 @@ function Register() {
                     name="birthdate"
                     placeholder="Birthdate"
                     onChange={(e) => setValues({ ...values, birthdate: e.target.value })}
+                  />
+                </Form.Group>
+
+                <Form.Group className='mt-2'>
+                  <Form.Label>Address</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="address"
+                    placeholder="Address"
+                    onChange={(e) => setValues({ ...values, address: e.target.value })}
                   />
                 </Form.Group>
 
