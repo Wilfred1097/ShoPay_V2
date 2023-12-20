@@ -317,49 +317,46 @@ app.delete('/delete/:itemType/:itemId', (req, res) => {
 });
 
 app.put('/update/:tableName/:id', async (req, res) => {
-    const tableName = req.params.tableName;
-    const id = req.params.id;
-  
-    // Determine the update query and corresponding values based on the table name
-    let updateQuery, values;
-  
-    if (tableName === 'product') {
-      updateQuery = "UPDATE product SET product_name=?, product_description=?, product_price=?, product_qty=? WHERE product_id=?";
-      values = [req.body.product_name, req.body.product_description, req.body.product_price, req.body.product_qty, id];
-    } else if (tableName === 'users') {
-      updateQuery = "UPDATE users SET name=?, username=?, birthdate=?, address=?, role=?, email=? WHERE user_id=?";
-      values = [req.body.name, req.body.username, req.body.birthdate, req.body.address, req.body.role, req.body.email, id];
-    } else {
-      return res.status(400).json({ Error: "Invalid table name" });
-    }
-  
-    try {
-      // Update the record in the database
-      db.query(updateQuery, values, (updateErr, updateResult) => {
-        if (updateErr) {
-          console.error(`Error updating record in ${tableName} table:`, updateErr);
-          return res.status(500).json({ Error: "Internal Server Error" });
-        }
-  
-        return res.status(200).json({ Status: `${tableName} record updated successfully` });
-      });
-    } catch (error) {
-      console.error(`Error updating record in ${tableName} table:`, error.message);
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  });
+  const tableName = req.params.tableName;
+  const id = req.params.id;
+  let updateQuery, values;
 
-// Endpoint to fetch product details based on product ID
+  if (tableName === 'product') {
+    updateQuery = "UPDATE product SET product_name=?, product_description=?, product_price=?, product_qty=? WHERE product_id=?";
+    values = [req.body.product_name, req.body.product_description, req.body.product_price, req.body.product_qty, id];
+  } else if (tableName === 'users') {
+    updateQuery = "UPDATE users SET name=?, username=?, birthdate=?, address=?, role=?, email=? WHERE user_id=?";
+    values = [req.body.name, req.body.username, req.body.birthdate, req.body.address, req.body.role, req.body.email, id];
+  } else {
+    return res.status(400).json({ Error: "Invalid table name" });
+  }
+
+  try {
+      // Update the record in the database
+    db.query(updateQuery, values, (updateErr, updateResult) => {
+      if (updateErr) {
+        console.error(`Error updating record in ${tableName} table:`, updateErr);
+        return res.status(500).json({ Error: "Internal Server Error" });
+      }
+
+      return res.status(200).json({ Status: `${tableName} record updated successfully` });
+    });
+  } catch (error) {
+    console.error(`Error updating record in ${tableName} table:`, error.message);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
+//fetch product details based on product ID
 app.get('/product/:id', (req, res) => {
   const productId = parseInt(req.params.id, 10);
 
-  // Check if productId is a valid integer
   if (isNaN(productId)) {
     res.status(400).json({ error: 'Invalid product ID' });
     return;
   }
 
-  // Modify the SQL query to select the specific product based on the product ID
   const getProductQuery = 'SELECT * FROM product WHERE product_id = ?';
 
   db.query(getProductQuery, [productId], (err, result) => {
@@ -370,15 +367,12 @@ app.get('/product/:id', (req, res) => {
     }
 
     if (result.length === 0) {
-      // If no product is found with the given ID, return a 404 status
       res.status(404).json({ error: 'Product not found' });
       return;
     }
 
-    // Assuming there is only one product with the given ID
     const product = result[0];
 
-    // Display product information
     res.json({
       product_id: product.product_id,
       product_name: product.product_name,
@@ -386,7 +380,6 @@ app.get('/product/:id', (req, res) => {
       product_photo: product.product_photo,
       product_price: product.product_price,
       product_qty: product.product_qty,
-      // Add other product information as needed
     });
   });
 });
@@ -404,11 +397,9 @@ app.post('/add-to-cart', authenticateToken, (req, res) => {
     }
 
     if (checkResult.length > 0) {
-      // If the product is already in the cart, you might want to handle this case
       return res.json({ status: 'Product already in the cart' });
     }
 
-    // If the product is not in the cart, add it
     const addToCartQuery = 'INSERT INTO cart (user_id, product_ids, quantity) VALUES (?, ?, 1)';
     db.query(addToCartQuery, [userId, productId], (addErr, addResult) => {
       if (addErr) {
