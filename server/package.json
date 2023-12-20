@@ -23,5 +23,11 @@
     "jsonwebtoken": "^9.0.2",
     "mysql": "^2.18.1",
     "react-router-dom": "^6.20.1"
+  },
+  "engines": {
+    "node": "0.4.12"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
