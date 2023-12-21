@@ -6,6 +6,7 @@ export const registrationSchema = yup.object().shape({
   birthdate: yup.string().required('\nBirthdate is required'),
   address: yup.string().required('\nAddress is required'),
   email: yup.string().email('\nInvalid email').required('\nEmail is required'),
+  profile: yup.string().url('\nInvalid url').required('\nProfile Photo is required'),
   role: yup.string().required('\nRole is required').oneOf(['user', 'admin'], '\nInvalid role'),
   password: yup.string().min(8, '\nPassword must be at least 8 characters'),
   confirmPassword: yup.string().oneOf([yup.ref('password'), null], '\nPasswords must match').required('\nConfirm password is required'),

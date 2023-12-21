@@ -232,7 +232,12 @@ function AdminPage() {
     fetch('http://localhost:3000/data')
       .then((response) => response.json())
       .then((responseData) => {
-        setUserData(responseData);
+        // Ensure responseData is an array before setting the state
+        if (Array.isArray(responseData)) {
+          setUserData(responseData);
+        } else {
+          console.error('Unexpected response structure:', responseData);
+        }
       })
       .catch((error) => {
         console.error('Error fetching user data:', error);
@@ -243,10 +248,15 @@ function AdminPage() {
     fetch('http://localhost:3000/product')
       .then((response) => response.json())
       .then((responseData) => {
-        setProductData(responseData);
+        // Ensure responseData is an array before setting the state
+        if (Array.isArray(responseData)) {
+          setProductData(responseData);
+        } else {
+          console.error('Unexpected response structure:', responseData);
+        }
       })
       .catch((error) => {
-        console.error('Error fetching product data:', error);
+        console.error('Error fetching user data:', error);
       });
   }, []);
 

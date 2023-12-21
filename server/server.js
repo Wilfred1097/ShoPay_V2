@@ -70,7 +70,7 @@ db.connect((err) => {
 app.post('/register', (req, res) => {
     const checkEmailQuery = "SELECT * FROM users WHERE email = ?";
     const checkUsernameQuery = "SELECT * FROM users WHERE username = ?";
-    const insertUserQuery = "INSERT INTO users (`name`, `username`, `birthdate`, `address`, `role`, `email`, `password`) VALUES (?)";
+    const insertUserQuery = "INSERT INTO users (`name`, `username`, `birthdate`, `address`, `role`, `email`, `profile_pic`, `password`) VALUES (?)";
 
     // Check if the email already exists
     db.query(checkEmailQuery, [req.body.email], (errEmail, resultEmail) => {
@@ -108,6 +108,7 @@ app.post('/register', (req, res) => {
                     req.body.address,
                     req.body.role,
                     req.body.email,
+                    req.body.profile,
                     hash
                 ];
 
