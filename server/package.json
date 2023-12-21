@@ -1,7 +1,7 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "",
+  "description": "Shopay Server",
   "main": "server.js",
   "type": "module",
   "scripts": {
@@ -14,7 +14,7 @@
     "start-client": "cd frontend && npm run start"
   },
   "keywords": [],
-  "author": "",
+  "author": "Wil Fred Catalan",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -34,5 +34,13 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Wilfred1097/ShoPay_V2.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Wilfred1097/ShoPay_V2/issues"
+  },
+  "homepage": "https://github.com/Wilfred1097/ShoPay_V2#readme"
 }
