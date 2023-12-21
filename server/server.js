@@ -129,7 +129,6 @@ app.post('/register', (req, res) => {
         });
     });
 });
-
 //Login
 app.post('/login', (req, res) => {
   const sql = 'SELECT * FROM users WHERE email = ?';
@@ -183,12 +182,9 @@ app.post('/login', (req, res) => {
 app.get('/profile', authenticateToken, (req, res) => {
   const userId = req.userId;
 
-  // Query to fetch user information
   const getUserQuery = 'SELECT * FROM users WHERE user_id = ?';
-  // Query to fetch purchased items
   const getPurchaseQuery = 'SELECT product_name, quantity, purchased_date FROM purchase WHERE user_id = ?';
 
-  // Execute both queries
   db.query(getUserQuery, [userId], (userErr, userResult) => {
     if (userErr) {
       console.error('Error executing MySQL query for user information:', userErr);
@@ -198,11 +194,6 @@ app.get('/profile', authenticateToken, (req, res) => {
 
     const user = userResult[0];
 
-    if (db.state === 'disconnected') {
-      db.connect();
-    }
-
-    // Execute the query for purchased items
     db.query(getPurchaseQuery, [userId], (purchaseErr, purchaseResult) => {
       if (purchaseErr) {
         console.error('Error executing MySQL query for purchased items:', purchaseErr);
@@ -216,25 +207,23 @@ app.get('/profile', authenticateToken, (req, res) => {
         purchased_date: item.purchased_date,
       }));
 
-      // Combine user information and purchased items in the response
       res.json({
         userId: user.user_id,
         name: user.name,
         username: user.username,
         address: user.address,
         email: user.email,
+        profile_pic: user.profile_pic,
         purchasedItems: purchasedItems,
       });
     });
   });
 });
- 
 //Logout
 app.post('/logout', (req, res) => {
     res.cookie('token', '', { expires: new Date(0) });
     return res.json({ Status: 'Success' });
 });
-
 //get all user
 app.get('/data', (req, res) => {
     const query = 'SELECT * FROM users'; // Replace with your actual table name
@@ -252,8 +241,7 @@ app.get('/data', (req, res) => {
   
       res.json(result);
     });
-  });
-
+});
 //get Product
 app.get('/product', (req, res) => {
 const query = 'SELECT * FROM product';
@@ -317,7 +305,7 @@ app.post('/add_product', async (req, res) => {
       res.status(500).json({ message: 'Internal server error' });
     }
 });
-
+//delete
 app.delete('/delete/:itemType/:itemId', (req, res) => {
     const { itemType, itemId } = req.params;
     let tableName;
@@ -344,7 +332,7 @@ app.delete('/delete/:itemType/:itemId', (req, res) => {
         return res.json({ Status: 'Item deleted successfully' });
     });
 });
-
+//ipdate
 app.put('/update/:tableName/:id', async (req, res) => {
   const tableName = req.params.tableName;
   const id = req.params.id;
@@ -379,7 +367,6 @@ app.put('/update/:tableName/:id', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
-
 
 //fetch product details based on product ID
 app.get('/product/:id', (req, res) => {
@@ -420,7 +407,6 @@ app.get('/product/:id', (req, res) => {
     });
   });
 });
-
 // Add to Cart
 app.post('/add-to-cart', authenticateToken, (req, res) => {
   const userId = req.userId;
@@ -453,7 +439,6 @@ app.post('/add-to-cart', authenticateToken, (req, res) => {
     });
   });
 });
-
 // Endpoint to fetch cart products based on user ID
 app.get('/cart', authenticateToken, (req, res) => {
   const userId = req.userId;
@@ -492,7 +477,6 @@ app.get('/cart', authenticateToken, (req, res) => {
     // console.log('Cart products fetched successfully:', cartProducts);
   });
 });
-
 //Chekout
 app.post('/checkout', authenticateToken, async (req, res) => {
   const { productName, cartId } = req.body;
@@ -522,7 +506,7 @@ app.post('/checkout', authenticateToken, async (req, res) => {
   }
 });
 
-  
+
 app.listen(port, () => {
     console.log("Server is running...");
 })

@@ -30,6 +30,7 @@ function AdminPage() {
     address: '',
     role: '',
     email: '',
+    profile_pic: '',
   });
 
   const handleUpdateUserClick = (user) => {
@@ -43,6 +44,7 @@ function AdminPage() {
       address: user.address,
       role: user.role,
       email: user.email,
+      profile_pic: user.profile_pic,
     });
   
     setShowUpdateUserModal(true); // Show the "Update User" modal
@@ -67,6 +69,7 @@ function AdminPage() {
         address: updateUserData.address,
         role: updateUserData.role,
         email: updateUserData.email,
+        profile_pic: updateUserData.profile_pic,
       };
   
       const response = await axios.put(`http://localhost:3000/update/${tableName}/${primaryKey}`, updateData);
@@ -410,6 +413,7 @@ function AdminPage() {
         </Container>
         </Tab>
       </Tabs>
+      
 {/* Update User Modal */}
       <Modal show={showUpdateUserModal} onHide={() => setShowUpdateUserModal(false)} backdrop="static" keyboard={false}>
         <Modal.Header closeButton>
@@ -474,6 +478,16 @@ function AdminPage() {
                 name="email"
                 value={updateUserData.email}
                 onChange={(e) => setUpdateUserData({ ...updateUserData, email: e.target.value })}
+              />
+            </Form.Group>
+
+            <Form.Group className='mt-2'>
+              <Form.Label>Profile Photo</Form.Label>
+              <Form.Control
+                type="url"
+                name="email"
+                value={updateUserData.profile_pic}
+                onChange={(e) => setUpdateUserData({ ...updateUserData, profile_pic: e.target.value })}
               />
             </Form.Group>
 

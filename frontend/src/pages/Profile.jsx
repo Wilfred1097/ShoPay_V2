@@ -9,6 +9,7 @@ function Profile() {
     username: '',
     address: '',
     email: '',
+    profile_pic: '',
     purchasedItems: [],
   });
 
@@ -40,6 +41,7 @@ function Profile() {
             username: data.username,
             address: data.address,
             email: data.email,
+            profile_pic: data.profile_pic,
             purchasedItems: formattedPurchasedItems,
           });
         } else {
@@ -65,7 +67,7 @@ function Profile() {
           <Col md={6}>
           <h1>Profile</h1>
             <Card>
-              <Image src="https://imgs.search.brave.com/vLn6KdkCH165e6pVh4THQoZHkkBAdTiQ5SGn7g5qx2Q/rs:fit:860:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS5pc3RvY2twaG90/by5jb20vaWQvMTQw/NjE5NzczMC9waG90/by9wb3J0cmFpdC1v/Zi1hLXlvdW5nLWhh/bmRzb21lLWluZGlh/bi1tYW4uanBnP3M9/NjEyeDYxMiZ3PTAm/az0yMCZjPUNuY05V/VGJ3Nm16R3Nib2pr/czJWdDBrVjg1Tl9w/UWFJM3phU2tCUUpG/VGM9" alt="Profile" fluid />
+              <Image src={profileData.profile_pic} alt="Profile" fluid />
               <Card.Body>
                 <Card.Title>Name: {profileData.name}</Card.Title>
                 <Card.Subtitle className="mb-2">Username: {profileData.username}</Card.Subtitle>
