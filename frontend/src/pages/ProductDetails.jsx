@@ -24,22 +24,30 @@ function ProductDetails() {
 
   const addToCart = async () => {
     try {
-      const response = await fetch('http://localhost:3000/add-to-cart', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ productId: parseInt(id, 10) }),
-      });
+        const response = await fetch('http://localhost:3000/add-to-cart', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ productId: parseInt(id, 10) }),
+        });
 
-      const data = await response.json();
-      setStatus(data.status);
+        const data = await response.json();
+
+        if (response.status === 401) {
+            // Handle 405 (Method Not Allowed) - Show an alert
+            alert('You must log in first.');
+        } else {
+            // Handle other response statuses
+            setStatus(data.status);
+        }
     } catch (error) {
-      console.error('Error adding to cart:', error);
-      setStatus('Error adding to cart');
+        console.error('Error adding to cart:', error);
+        setStatus('Error adding to cart');
     }
-  };
+};
+
 
   if (!productDetails) {
     return <div>Loading...</div>;
