@@ -33,10 +33,10 @@ function AdminPage() {
   });
 
   const handleUpdateUserClick = (user) => {
-    setSelectedProductId(user.id);
-
+    setSelectedProductId(user.user_id);
+  
     setUpdateUserData({
-      id: user.user_id,
+      user_id: user.user_id,
       name: user.name,
       username: user.username,
       birthdate: user.birthdate,
@@ -44,13 +44,20 @@ function AdminPage() {
       role: user.role,
       email: user.email,
     });
-
+  
     setShowUpdateUserModal(true); // Show the "Update User" modal
   };
 
   const handleUpdateUser = async () => {
     try {
       const tableName = 'users';
+      
+      // Ensure selectedProductId has a valid value
+      if (!selectedProductId) {
+        console.error('Error: selectedProductId is undefined or null');
+        return;
+      }
+  
       const primaryKey = selectedProductId;
   
       const updateData = {
@@ -66,7 +73,6 @@ function AdminPage() {
   
       if (response && response.data && response.data.Status === `${tableName} record updated successfully`) {
         alert(response.data.Status);
-  
         setShowUpdateUserModal(false);
   
         setTimeout(() => {
@@ -79,6 +85,7 @@ function AdminPage() {
       console.error('Error updating user:', error);
     }
   };
+  
   
 
   const [updateProductData, setUpdateProductData] = useState({
