@@ -26,7 +26,7 @@ function Login() {
         const userRole = response.data.Role;
 
         if (userRole === 'admin') {
-          navigate('/admin');
+          navigate('/forbiddenpage');
         } else if (userRole === 'user') {
           navigate('/');
         } else {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Register from './pages/Register';
 import Login from './pages/Login';
@@ -8,6 +8,7 @@ import AdminPage from './pages/AdminPage';
 import Profile from './pages/Profile';
 import ProductDetails from './pages/ProductDetails';
 import Cart from './pages/Cart';
+import NotFound from './pages/error404';
 
 const ProtectedRoute = ({ element, allowedRoles, ...props }) => {
   // Replace the following line with your actual authentication and role-checking logic
@@ -26,7 +27,7 @@ const ProtectedRoute = ({ element, allowedRoles, ...props }) => {
 
 function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/register" element={<Register />} />
@@ -35,12 +36,12 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/cart" element={<Cart />} />
-        <Route
-          path="/admin"
-          element={<ProtectedRoute element={<AdminPage />} allowedRoles={['admin']} />}
-        />
+        <Route path="/forbiddenpage" element={<ProtectedRoute element={<AdminPage />} allowedRoles={['admin']} />} />
+        
+        {/* Add the catch-all route for unmatched routes */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 }
 
