@@ -66,7 +66,6 @@ db.connect((err) => {
     }
 });
 
-
 // Registration
 app.post('/register', (req, res) => {
     const checkEmailQuery = "SELECT * FROM users WHERE email = ?";
@@ -112,6 +111,10 @@ app.post('/register', (req, res) => {
                     hash
                 ];
 
+                if (db.state === 'disconnected') {
+                  db.connect();
+                }
+
                 // Insert the user into the database
                 db.query(insertUserQuery, [values], (insertErr, insertResult) => {
                     if (insertErr) {
@@ -125,11 +128,16 @@ app.post('/register', (req, res) => {
         });
     });
 });
+
 //Login
 app.post('/login', (req, res) => {
   const sql = 'SELECT * FROM users WHERE email = ?';
   db.query(sql, [req.body.email], (err, data) => {
       if (err) return res.json({ Error: "Login error in server" });
+
+      if (db.state === 'disconnected') {
+        db.connect();
+      }
 
       if (data.length > 0) {
           bcrypt.compare(req.body.password.toString(), data[0].password, (err, response) => {
@@ -189,6 +197,10 @@ app.get('/profile', authenticateToken, (req, res) => {
 
     const user = userResult[0];
 
+    if (db.state === 'disconnected') {
+      db.connect();
+    }
+
     // Execute the query for purchased items
     db.query(getPurchaseQuery, [userId], (purchaseErr, purchaseResult) => {
       if (purchaseErr) {
@@ -215,17 +227,20 @@ app.get('/profile', authenticateToken, (req, res) => {
     });
   });
 });
-
-
  
 //Logout
 app.post('/logout', (req, res) => {
     res.cookie('token', '', { expires: new Date(0) });
     return res.json({ Status: 'Success' });
 });
+
 //get all user
 app.get('/data', (req, res) => {
     const query = 'SELECT * FROM users'; // Replace with your actual table name
+
+    if (db.state === 'disconnected') {
+      db.connect();
+    }
   
     db.query(query, (err, result) => {
       if (err) {
@@ -237,9 +252,14 @@ app.get('/data', (req, res) => {
       res.json(result);
     });
   });
+
 //get Product
 app.get('/product', (req, res) => {
 const query = 'SELECT * FROM product';
+
+if (db.state === 'disconnected') {
+  db.connect();
+}
 
 db.query(query, (err, result) => {
     if (err) {
@@ -256,6 +276,10 @@ app.post('/add_product', async (req, res) => {
     const checkProductNameQuery = "SELECT * FROM product WHERE product_name = ?";
     const insertProductQuery = "INSERT INTO product (`product_name`, `product_description`, `product_photo`, `product_price`, `product_qty`) VALUES (?)";
   
+    if (db.state === 'disconnected') {
+      db.connect();
+    }
+
     try {
       // Check if the product name already exists
       db.query(checkProductNameQuery, [req.body.product_name], (errProductName, resultProductName) => {
@@ -292,6 +316,7 @@ app.post('/add_product', async (req, res) => {
       res.status(500).json({ message: 'Internal server error' });
     }
 });
+
 app.delete('/delete/:itemType/:itemId', (req, res) => {
     const { itemType, itemId } = req.params;
     let tableName;
@@ -302,6 +327,9 @@ app.delete('/delete/:itemType/:itemId', (req, res) => {
         tableName = 'product';
     } else {
         return res.status(400).json({ Error: 'Invalid item type' });
+    }
+    if (db.state === 'disconnected') {
+      db.connect();
     }
 
     const deleteQuery = `DELETE FROM ${tableName} WHERE ${itemType === 'user' ? 'id' : 'product_id'} = ?`;
@@ -320,6 +348,10 @@ app.put('/update/:tableName/:id', async (req, res) => {
   const tableName = req.params.tableName;
   const id = req.params.id;
   let updateQuery, values;
+
+  if (db.state === 'disconnected') {
+    db.connect();
+  }
 
   if (tableName === 'product') {
     updateQuery = "UPDATE product SET product_name=?, product_description=?, product_price=?, product_qty=? WHERE product_id=?";
@@ -357,6 +389,10 @@ app.get('/product/:id', (req, res) => {
     return;
   }
 
+  if (db.state === 'disconnected') {
+    db.connect();
+  }
+
   const getProductQuery = 'SELECT * FROM product WHERE product_id = ?';
 
   db.query(getProductQuery, [productId], (err, result) => {
@@ -383,10 +419,15 @@ app.get('/product/:id', (req, res) => {
     });
   });
 });
+
 // Add to Cart
 app.post('/add-to-cart', authenticateToken, (req, res) => {
   const userId = req.userId;
   const productId = req.body.productId; // Assuming the product ID is sent in the request body
+
+  if (db.state === 'disconnected') {
+    db.connect();
+  }
 
   // Check if the product is already in the user's cart
   const checkCartQuery = 'SELECT * FROM cart WHERE user_id = ? AND product_ids = ?';
@@ -415,6 +456,10 @@ app.post('/add-to-cart', authenticateToken, (req, res) => {
 // Endpoint to fetch cart products based on user ID
 app.get('/cart', authenticateToken, (req, res) => {
   const userId = req.userId;
+
+  if (db.state === 'disconnected') {
+    db.connect();
+  }
 
   const getCartProductsQuery = `
     SELECT * FROM CartProductView WHERE user_id = ?;
@@ -451,6 +496,10 @@ app.get('/cart', authenticateToken, (req, res) => {
 app.post('/checkout', authenticateToken, async (req, res) => {
   const { productName, cartId } = req.body;
   const userId = req.userId;
+
+  if (db.state === 'disconnected') {
+    db.connect();
+  }
 
   try {
     // Perform the checkout process, update checkout table, and product table
